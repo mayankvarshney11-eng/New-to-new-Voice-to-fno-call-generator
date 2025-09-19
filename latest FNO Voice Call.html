@@ -1,0 +1,796 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice FNO Call Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 15px;
+        }
+
+        .voice-container {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .voice-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            font-size: 48px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .voice-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .voice-button.recording {
+            background: linear-gradient(135deg, #ff4757, #ff6b6b);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .voice-button.processing {
+            background: linear-gradient(135deg, #ffa500, #ff8f00);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            min-height: 25px;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .example-text {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-style: italic;
+            color: #1976d2;
+            border-left: 4px solid #2196f3;
+        }
+
+        .recognized-text {
+            background: #fff3cd;
+            border: 2px solid #ffd700;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .recognized-text h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .recognized-text p {
+            color: #333;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .output-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .output-text {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-line;
+            margin-bottom: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .copy-btn, .post-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .copy-btn:hover {
+            background: #7f8c8d;
+        }
+
+        .post-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .post-btn:hover {
+            background: #2ecc71;
+        }
+
+        .telegram-setup {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .telegram-setup h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .telegram-setup input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .success-msg, .error-msg {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .mic-permission {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .mic-status {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .mic-status.enabled {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .mic-status.disabled {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .voice-container {
+                padding: 25px;
+            }
+            
+            .voice-button {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Voice FNO Calls</h1>
+            <p>Speak your call, get professional format instantly</p>
+        </div>
+
+        <div class="voice-container">
+            <button class="voice-button" id="voiceBtn" onclick="startDirectRecording()">
+                🎤
+            </button>
+
+            <div class="status-text" id="statusText">Tap to speak your FNO call</div>
+
+            <div class="instructions">
+                <h3>🗣️ How to Use:</h3>
+                <ul>
+                    <li><strong>Tap microphone</strong> to start recording</li>
+                    <li><strong>Speak clearly:</strong> "Reliance call 2500 buy 45 target 55 stop 40"</li>
+                    <li><strong>Tap again</strong> to stop and generate call</li>
+                    <li><strong>Post directly</strong> to your Telegram channel</li>
+                </ul>
+
+                <div class="example-text">
+                    <strong>Example:</strong><br>
+                    "निफ्टी पुट 19000 सेल 120 टारगेट 80 स्टॉप 140"<br>
+                    या<br>
+                    "HDFC call buy 25 target 30 stop 20"
+                </div>
+            </div>
+
+            <div class="recognized-text" id="recognizedText">
+                <h4>🎯 Recognized Speech:</h4>
+                <p id="recognizedContent"></p>
+            </div>
+
+            <div class="telegram-setup">
+                <h3>📱 Telegram Setup</h3>
+                <input type="text" id="botToken" placeholder="Bot Token (from @BotFather)">
+                <input type="text" id="channelId" placeholder="Channel ID (@yourchannel)">
+            </div>
+
+            <div class="output-container" id="outputContainer">
+                <div class="output-text" id="outputText"></div>
+                <div class="action-buttons">
+                    <button class="copy-btn" onclick="copyToClipboard()">📋 Copy</button>
+                    <button class="post-btn" onclick="postToTelegram()">📤 Post to Channel</button>
+                </div>
+            </div>
+
+            <div class="success-msg" id="successMsg">✅ Posted to Telegram successfully!</div>
+            <div class="error-msg" id="errorMsg">❌ Error occurred</div>
+        </div>
+    </div>
+
+    <script>
+        let isRecording = false;
+        let recognition = null;
+        let generatedCall = '';
+
+        // Check for browser support
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+            } else if ('SpeechRecognition' in window) {
+                recognition = new SpeechRecognition();
+            } else {
+                document.getElementById('errorMsg').textContent = '❌ Speech recognition not supported in this browser';
+                document.getElementById('errorMsg').style.display = 'block';
+                return false;
+            }
+
+            // Configure recognition
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'hi-IN,en-IN'; // Hindi and English (India)
+            
+            recognition.onstart = function() {
+                console.log('Speech recognition started');
+                isRecording = true;
+                updateUI();
+            };
+
+            recognition.onend = function() {
+                console.log('Speech recognition ended');
+                isRecording = false;
+                updateUI();
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                console.log('Recognized:', transcript);
+                
+                // Show recognized text
+                document.getElementById('recognizedContent').textContent = transcript;
+                document.getElementById('recognizedText').style.display = 'block';
+                
+                // Process the speech
+                processVoiceInput(transcript);
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                isRecording = false;
+                updateUI();
+                
+                let errorMessage = '❌ ';
+                switch(event.error) {
+                    case 'no-speech':
+                        errorMessage += 'No speech detected. Please try again.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage += 'Microphone not accessible.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage += 'Microphone permission denied.';
+                        document.getElementById('micPermission').style.display = 'block';
+                        break;
+                    default:
+                        errorMessage += 'Speech recognition error. Please try again.';
+                }
+                
+                document.getElementById('errorMsg').textContent = errorMessage;
+                document.getElementById('errorMsg').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('errorMsg').style.display = 'none';
+                }, 4000);
+            };
+
+            return true;
+        }
+
+        function startDirectRecording() {
+            if (!recognition && !initSpeechRecognition()) {
+                return;
+            }
+
+            if (isRecording) {
+                recognition.stop();
+                return;
+            }
+
+            // Auto-request mic permission and start recording immediately
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    // Permission granted, start recording
+                    stream.getTracks().forEach(track => track.stop()); // Stop test stream
+                    
+                    // Clear previous results
+                    document.getElementById('recognizedText').style.display = 'none';
+                    document.getElementById('outputContainer').style.display = 'none';
+                    document.getElementById('errorMsg').style.display = 'none';
+                    
+                    // Start speech recognition
+                    recognition.start();
+                })
+                .catch(function(err) {
+                    // Permission denied - show friendly message and try anyway
+                    console.log('Mic permission issue, trying direct recognition...');
+                    
+                    // Try direct recognition (might work on some browsers)
+                    try {
+                        recognition.start();
+                    } catch (recognitionError) {
+                        document.getElementById('errorMsg').textContent = '🎤 Please allow microphone access and try again';
+                        document.getElementById('errorMsg').style.display = 'block';
+                        setTimeout(() => {
+                            document.getElementById('errorMsg').style.display = 'none';
+                        }, 4000);
+                    }
+                });
+        }
+
+        function toggleRecording() {
+            startDirectRecording(); // Use the new direct method
+        }
+
+        function updateUI() {
+            const btn = document.getElementById('voiceBtn');
+            const statusText = document.getElementById('statusText');
+
+            if (isRecording) {
+                btn.className = 'voice-button recording';
+                btn.textContent = '⏹️';
+                statusText.textContent = 'Listening... Speak your FNO call';
+            } else {
+                btn.className = 'voice-button';
+                btn.textContent = '🎤';
+                statusText.textContent = 'Tap to speak your FNO call';
+            }
+        }
+
+        function processVoiceInput(transcript) {
+            // Show processing
+            document.getElementById('statusText').textContent = 'Processing your call...';
+            document.getElementById('voiceBtn').className = 'voice-button processing';
+            document.getElementById('voiceBtn').textContent = '⚙️';
+
+            // Parse the transcript
+            const callData = parseVoiceTranscript(transcript);
+            
+            if (callData.success) {
+                // Generate professional call
+                const professionalCall = generateProfessionalCall(callData);
+                
+                // Show output
+                generatedCall = professionalCall;
+                document.getElementById('outputText').textContent = professionalCall;
+                document.getElementById('outputContainer').style.display = 'block';
+                
+                // Update status
+                document.getElementById('statusText').textContent = 'Call generated successfully!';
+                
+                // Scroll to output
+                setTimeout(() => {
+                    document.getElementById('outputContainer').scrollIntoView({ behavior: 'smooth' });
+                }, 500);
+            } else {
+                document.getElementById('errorMsg').textContent = `❌ ${callData.error}`;
+                document.getElementById('errorMsg').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('errorMsg').style.display = 'none';
+                }, 4000);
+            }
+
+            // Reset button
+            setTimeout(() => {
+                updateUI();
+            }, 2000);
+        }
+
+        function parseVoiceTranscript(text) {
+            try {
+                // Convert to uppercase for easier parsing
+                const upperText = text.toUpperCase();
+                
+                // Initialize result object
+                const result = {
+                    symbol: '',
+                    optionType: '',
+                    strike: '',
+                    action: '',
+                    entryPrice: '',
+                    targets: [],
+                    stopLoss: '',
+                    success: false
+                };
+
+                // Extract symbol (first word usually)
+                const words = text.split(/\s+/);
+                if (words[0]) {
+                    result.symbol = words[0].toUpperCase().replace(/[^\w]/g, '');
+                }
+
+                // Extract option type
+                if (upperText.includes('CALL') || upperText.includes('कॉल') || upperText.includes('CE')) {
+                    result.optionType = 'CE';
+                } else if (upperText.includes('PUT') || upperText.includes('पुट') || upperText.includes('PE')) {
+                    result.optionType = 'PE';
+                } else {
+                    result.optionType = 'CE'; // Default to call
+                }
+
+                // Extract action
+                if (upperText.includes('BUY') || upperText.includes('बाय') || upperText.includes('खरीदो') || upperText.includes('LONG')) {
+                    result.action = 'BUY';
+                } else if (upperText.includes('SELL') || upperText.includes('सेल') || upperText.includes('बेचो') || upperText.includes('SHORT')) {
+                    result.action = 'SELL';
+                } else {
+                    result.action = 'BUY'; // Default to buy
+                }
+
+                // Extract numbers using regex
+                const numbers = text.match(/\d+(?:\.\d+)?/g);
+                if (!numbers || numbers.length < 2) {
+                    return { success: false, error: 'Could not detect strike price and entry price. Please speak clearly.' };
+                }
+
+                // Convert to numbers
+                const numArray = numbers.map(n => parseFloat(n));
+                
+                // Assign numbers based on size (strike is usually 4-5 digits)
+                let strike = numArray.find(n => n >= 1000 && n <= 99999);
+                if (strike) {
+                    result.strike = strike;
+                    // Remove strike from array
+                    const strikeIndex = numArray.indexOf(strike);
+                    numArray.splice(strikeIndex, 1);
+                }
+
+                // Remaining numbers: first is entry, others are targets/SL
+                if (numArray.length > 0) {
+                    result.entryPrice = numArray[0];
+                    
+                    // Parse targets and stop loss from remaining
+                    for (let i = 1; i < numArray.length; i++) {
+                        if (i <= 2) { // First 2 are targets
+                            result.targets.push(numArray[i]);
+                        } else { // Last is stop loss
+                            result.stopLoss = numArray[i];
+                        }
+                    }
+                }
+
+                // Enhanced parsing for targets and stop loss using keywords
+                const targetMatches = text.match(/target[s]?\s*(\d+(?:\.\d+)?)/gi);
+                if (targetMatches) {
+                    result.targets = targetMatches.map(match => {
+                        const num = match.match(/(\d+(?:\.\d+)?)/);
+                        return num ? parseFloat(num[1]) : null;
+                    }).filter(n => n !== null);
+                }
+
+                const stopMatches = text.match(/stop[^a-z]*(\d+(?:\.\d+)?)/gi);
+                if (stopMatches && stopMatches[0]) {
+                    const num = stopMatches[0].match(/(\d+(?:\.\d+)?)/);
+                    if (num) result.stopLoss = parseFloat(num[1]);
+                }
+
+                // Validation
+                if (!result.symbol) {
+                    return { success: false, error: 'Stock symbol not detected. Please mention stock name clearly.' };
+                }
+                if (!result.strike) {
+                    return { success: false, error: 'Strike price not detected. Please mention strike price.' };
+                }
+                if (!result.entryPrice) {
+                    return { success: false, error: 'Entry price not detected. Please mention entry price.' };
+                }
+
+                result.success = true;
+                return result;
+
+            } catch (error) {
+                return { success: false, error: 'Error parsing voice input. Please try again.' };
+            }
+        }
+
+        function generateProfessionalCall(data) {
+            // Mock current price (entry + random variation)
+            const currentPrice = data.entryPrice * (1 + (Math.random() * 0.1 - 0.05));
+            const changePct = ((currentPrice - data.entryPrice) / data.entryPrice) * 100;
+
+            // Determine emoji
+            let emoji = '🟡⏸️';
+            if (data.action === 'BUY' && changePct > 0) emoji = '🟢📈';
+            else if (data.action === 'BUY' && changePct < 0) emoji = '🔴📉';
+            else if (data.action === 'SELL' && changePct < 0) emoji = '🟢📉';
+            else if (data.action === 'SELL' && changePct > 0) emoji = '🔴📈';
+
+            // Generate expiry (next Thursday)
+            const today = new Date();
+            const daysToAdd = (11 - today.getDay()) % 7;
+            const expiry = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+
+            // Build call text
+            let callText = `${emoji} FNO CALL - ${data.symbol}\n\n`;
+            callText += `📊 ${data.optionType} OPTION: ${data.strike} ${data.optionType}\n`;
+            callText += `⚡ ACTION: ${data.action}\n`;
+            callText += `💰 ENTRY: ₹${data.entryPrice}\n`;
+            callText += `📈 CMP: ₹${currentPrice.toFixed(1)} (${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%)\n\n`;
+
+            // Add targets
+            if (data.targets.length > 0) {
+                callText += `🎯 TARGETS:\n`;
+                data.targets.forEach((target, index) => {
+                    const gain = ((target - data.entryPrice) / data.entryPrice) * 100;
+                    callText += `T${index + 1}: ₹${target} (${gain > 0 ? '+' : ''}${gain.toFixed(0)}%)\n`;
+                });
+                callText += '\n';
+            }
+
+            // Add stop loss
+            if (data.stopLoss) {
+                const risk = ((data.stopLoss - data.entryPrice) / data.entryPrice) * 100;
+                callText += `🛑 STOP LOSS: ₹${data.stopLoss} (${risk > 0 ? '+' : ''}${risk.toFixed(0)}%)\n`;
+                
+                // Risk-reward
+                if (data.targets.length > 0) {
+                    const avgGain = data.targets.reduce((sum, t) => sum + ((t - data.entryPrice) / data.entryPrice) * 100, 0) / data.targets.length;
+                    const riskReward = Math.abs(avgGain / risk);
+                    callText += `📊 Risk:Reward → 1:${riskReward.toFixed(1)}\n`;
+                }
+                callText += '\n';
+            }
+
+            callText += `⏰ Time: ${new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}\n`;
+            callText += `📅 Expiry: ${expiry.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'})}\n`;
+            callText += `💡 Advice: Follow strict SL\n\n`;
+            callText += `⚠️ Disclaimer: Trade at your own risk`;
+
+            return callText;
+        }
+
+        function copyToClipboard() {
+            navigator.clipboard.writeText(generatedCall).then(function() {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        async function postToTelegram() {
+            const botToken = document.getElementById('botToken').value;
+            const channelId = document.getElementById('channelId').value;
+
+            if (!botToken || !channelId) {
+                document.getElementById('errorMsg').textContent = '❌ Please set Bot Token and Channel ID';
+                document.getElementById('errorMsg').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('errorMsg').style.display = 'none';
+                }, 3000);
+                return;
+            }
+
+            try {
+                const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: channelId,
+                        text: generatedCall,
+                        parse_mode: 'HTML'
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('successMsg').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('successMsg').style.display = 'none';
+                    }, 3000);
+                } else {
+                    throw new Error('Failed to post');
+                }
+            } catch (error) {
+                document.getElementById('errorMsg').textContent = '❌ Error posting to Telegram. Check token/channel.';
+                document.getElementById('errorMsg').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('errorMsg').style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Save/load Telegram settings
+        function saveSettings() {
+            const settings = {
+                botToken: document.getElementById('botToken').value,
+                channelId: document.getElementById('channelId').value
+            };
+            localStorage.setItem('voiceFNOSettings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('voiceFNOSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                if (settings.botToken) document.getElementById('botToken').value = settings.botToken;
+                if (settings.channelId) document.getElementById('channelId').value = settings.channelId;
+            }
+        }
+
+        // Auto-save settings
+        document.getElementById('botToken').addEventListener('input', saveSettings);
+        document.getElementById('channelId').addEventListener('input', saveSettings);
+
+        // Initialize on page load
+        window.onload = function() {
+            loadSettings();
+            initSpeechRecognition();
+            
+            // Pre-warm microphone access (silent request)
+            setTimeout(() => {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        stream.getTracks().forEach(track => track.stop());
+                        console.log('Microphone pre-warmed successfully');
+                    })
+                    .catch(err => {
+                        console.log('Mic pre-warm failed (normal on first visit)');
+                    });
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
